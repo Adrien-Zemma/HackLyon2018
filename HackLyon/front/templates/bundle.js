@@ -61,7 +61,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "3a32b111365a82129816"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "6c43cccdcd67c73b2a38"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -13780,6 +13780,169 @@ if (process.env.NODE_ENV !== 'production') {
 
 module.exports = warning;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__("./node_modules/process/browser.js")))
+
+/***/ }),
+
+/***/ "./node_modules/fetch-dedupe/es/index.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["c"] = getRequestKey;
+/* harmony export (immutable) */ __webpack_exports__["d"] = isRequestInFlight;
+/* harmony export (immutable) */ __webpack_exports__["a"] = clearRequestCache;
+/* harmony export (immutable) */ __webpack_exports__["b"] = fetchDedupe;
+// This is a cache of in-flight requests. Each request key maps to an
+// array of Promises. When the request resolves, each promise in the
+// array is pushed to.
+var requests = {};
+
+function getRequestKey() {
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      _ref$url = _ref.url,
+      url = _ref$url === undefined ? '' : _ref$url,
+      _ref$method = _ref.method,
+      method = _ref$method === undefined ? '' : _ref$method,
+      _ref$responseType = _ref.responseType,
+      responseType = _ref$responseType === undefined ? '' : _ref$responseType,
+      _ref$body = _ref.body,
+      body = _ref$body === undefined ? '' : _ref$body;
+
+  return [url, method.toUpperCase(), responseType, body].join('||');
+}
+
+// Returns `true` if a request with `requestKey` is in flight,
+// and `false` otherwise.
+function isRequestInFlight(requestKey) {
+  return Boolean(requests[requestKey]);
+}
+
+function clearRequestCache() {
+  requests = {};
+}
+
+// This loops through all of the handlers for the request and either
+// resolves or rejects them.
+function resolveRequest(_ref2) {
+  var requestKey = _ref2.requestKey,
+      res = _ref2.res,
+      err = _ref2.err;
+
+  var handlers = requests[requestKey] || [];
+
+  handlers.forEach(function (handler) {
+    if (res) {
+      handler.resolve(res);
+    } else {
+      handler.reject(err);
+    }
+  });
+
+  // This list of handlers has been, well, handled. So we
+  // clear the handlers for the next request.
+  requests[requestKey] = null;
+}
+
+function fetchDedupe(input) {
+  var init = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var dedupeOptions = arguments[2];
+
+  var opts = void 0,
+      initToUse = void 0;
+  if (dedupeOptions) {
+    opts = dedupeOptions;
+    initToUse = init;
+  } else if (init.responseType) {
+    opts = init;
+    initToUse = {};
+  } else {
+    opts = {};
+    initToUse = init;
+  }
+
+  var _opts = opts,
+      requestKey = _opts.requestKey,
+      _opts$responseType = _opts.responseType,
+      responseType = _opts$responseType === undefined ? '' : _opts$responseType,
+      _opts$dedupe = _opts.dedupe,
+      dedupe = _opts$dedupe === undefined ? true : _opts$dedupe;
+
+  // Build the default request key if one is not passed
+
+  var requestKeyToUse = requestKey || getRequestKey({
+    // If `input` is a request, then we use that URL
+    url: input.url || input,
+    // We prefer values from `init` over request objects. With `fetch()`, init
+    // takes priority over a passed-in request
+    method: initToUse.method || input.method || '',
+    body: initToUse.body || input.body || ''
+  });
+
+  var proxyReq = void 0;
+  if (dedupe) {
+    if (!requests[requestKeyToUse]) {
+      requests[requestKeyToUse] = [];
+    }
+
+    var handlers = requests[requestKeyToUse];
+    var requestInFlight = Boolean(handlers.length);
+    var requestHandler = {};
+    proxyReq = new Promise(function (resolve, reject) {
+      requestHandler.resolve = resolve;
+      requestHandler.reject = reject;
+    });
+
+    handlers.push(requestHandler);
+
+    if (requestInFlight) {
+      return proxyReq;
+    }
+  }
+
+  var request = fetch(input, initToUse).then(function (res) {
+    var responseTypeToUse = void 0;
+    if (responseType instanceof Function) {
+      responseTypeToUse = responseType(res);
+    } else if (responseType) {
+      responseTypeToUse = responseType;
+    } else if (res.status === 204) {
+      responseTypeToUse = 'text';
+    } else {
+      responseTypeToUse = 'json';
+    }
+    // The response body is a ReadableStream. ReadableStreams can only be read a single
+    // time, so we must handle that in a central location, here, before resolving
+    // the fetch.
+    return res[responseTypeToUse]().then(function (data) {
+      res.data = data;
+
+      if (dedupe) {
+        resolveRequest({ requestKey: requestKeyToUse, res: res });
+      } else {
+        return res;
+      }
+    }, function () {
+      res.data = null;
+
+      if (dedupe) {
+        resolveRequest({ requestKey: requestKeyToUse, res: res });
+      } else {
+        return res;
+      }
+    });
+  }, function (err) {
+    if (dedupe) {
+      resolveRequest({ requestKey: requestKeyToUse, err: err });
+    } else {
+      return Promise.reject(err);
+    }
+  });
+
+  if (dedupe) {
+    return proxyReq;
+  } else {
+    return request;
+  }
+}
 
 /***/ }),
 
@@ -60086,6 +60249,532 @@ module.exports = invariant;
 
 /***/ }),
 
+/***/ "./node_modules/react-request/es/fetch.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony export (immutable) */ __webpack_exports__["b"] = clearResponseCache;
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return Fetch; });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react__ = __webpack_require__("./node_modules/react/index.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_react___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_0_react__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types__ = __webpack_require__("./node_modules/prop-types/index.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_prop_types___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_prop_types__);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__ = __webpack_require__("./node_modules/fetch-dedupe/es/index.js");
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+
+
+
+
+// This object is our cache
+// The keys of the object are requestKeys
+// The value of each key is a Response instance
+var responseCache = {};
+
+// The docs state that this is not safe to use in an
+// application. That's just because I am not writing tests,
+// nor designing the API, around folks clearing the cache.
+// This was only added to help out with testing your app.
+// Use your judgment if you decide to use this in your
+// app directly.
+function clearResponseCache() {
+  responseCache = {};
+}
+
+var Fetch = function (_React$Component) {
+  _inherits(Fetch, _React$Component);
+
+  _createClass(Fetch, [{
+    key: 'render',
+    value: function render() {
+      // Anything pulled from `this.props` here is not eligible to be
+      // specified when calling `doFetch`.
+      var _props = this.props,
+          children = _props.children,
+          requestName = _props.requestName;
+      var _state = this.state,
+          fetching = _state.fetching,
+          response = _state.response,
+          data = _state.data,
+          error = _state.error,
+          requestKey = _state.requestKey,
+          url = _state.url;
+
+
+      if (!children) {
+        return null;
+      } else {
+        return children({
+          requestName: requestName,
+          url: url,
+          fetching: fetching,
+          failed: Boolean(error || response && !response.ok),
+          response: response,
+          data: data,
+          requestKey: requestKey,
+          error: error,
+          doFetch: this.fetchRenderProp
+        }) || null;
+      }
+    }
+  }]);
+
+  function Fetch(props, context) {
+    _classCallCheck(this, Fetch);
+
+    var _this = _possibleConstructorReturn(this, (Fetch.__proto__ || Object.getPrototypeOf(Fetch)).call(this, props, context));
+
+    _this.isReadRequest = function (method) {
+      var uppercaseMethod = method.toUpperCase();
+
+      return uppercaseMethod === 'GET' || uppercaseMethod === 'HEAD' || uppercaseMethod === 'OPTIONS';
+    };
+
+    _this.isLazy = function () {
+      var _this$props = _this.props,
+          lazy = _this$props.lazy,
+          method = _this$props.method;
+
+
+      return typeof lazy === 'undefined' ? !_this.isReadRequest(method) : lazy;
+    };
+
+    _this.shouldCacheResponse = function () {
+      var _this$props2 = _this.props,
+          cacheResponse = _this$props2.cacheResponse,
+          method = _this$props2.method;
+
+
+      return typeof cacheResponse === 'undefined' ? _this.isReadRequest(method) : cacheResponse;
+    };
+
+    _this.getFetchPolicy = function () {
+      var _this$props3 = _this.props,
+          fetchPolicy = _this$props3.fetchPolicy,
+          method = _this$props3.method;
+
+
+      if (typeof fetchPolicy === 'undefined') {
+        return _this.isReadRequest(method) ? 'cache-first' : 'network-only';
+      } else {
+        return fetchPolicy;
+      }
+    };
+
+    _this.cancelExistingRequest = function (reason) {
+      if (_this.state.fetching && !_this.hasHandledNetworkResponse) {
+        var abortError = new Error(reason);
+        // This is an effort to mimic the error that is created when a
+        // fetch is actually aborted using the AbortController API.
+        abortError.name = 'AbortError';
+        _this.onResponseReceived(_extends({}, _this.responseReceivedInfo, {
+          error: abortError,
+          hittingNetwork: true
+        }));
+      }
+    };
+
+    _this.fetchRenderProp = function (options) {
+      // We wrap this in a setTimeout so as to avoid calls to `setState`
+      // in render, which React does not allow.
+      //
+      // tl;dr, the following code should never cause a problem:
+      //
+      // `<Fetch children={({ doFetch }) => doFetch()} />
+      setTimeout(function () {
+        _this.fetchData(options, true);
+      });
+    };
+
+    _this.getRequestKey = function (options) {
+      // A request key in the options gets top priority
+      if (options && options.requestKey) {
+        return options.requestKey;
+      }
+
+      // Otherwise, if we have no request key, but we do have options, then we
+      // recompute the request key based on these options.
+      // Note that if the URL, body, or method have not changed, then the request
+      // key should match the previous request key if it was computed.
+      // If you passed in a custom request key as a prop, then you will also
+      // need to pass in a custom key when you call `doFetch()`!
+      else if (options) {
+          var _Object$assign = Object.assign({}, _this.props, options),
+              url = _Object$assign.url,
+              method = _Object$assign.method,
+              body = _Object$assign.body;
+
+          return Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["c" /* getRequestKey */])({
+            url: url,
+            body: body,
+            method: method.toUpperCase()
+          });
+        }
+
+        // Next in line is the the request key from props.
+        else if (_this.props.requestKey) {
+            return _this.props.requestKey;
+          }
+
+          // Lastly, we compute the request key from the props.
+          else {
+              var _this$props4 = _this.props,
+                  _url = _this$props4.url,
+                  _method = _this$props4.method,
+                  _body = _this$props4.body;
+
+
+              return Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["c" /* getRequestKey */])({
+                url: _url,
+                body: _body,
+                method: _method.toUpperCase()
+              });
+            }
+    };
+
+    _this.fetchData = function (options, ignoreCache) {
+      // These are the things that we do not allow a user to configure in
+      // `options` when calling `doFetch()`. Perhaps we should, however.
+      var _this$props5 = _this.props,
+          requestName = _this$props5.requestName,
+          dedupe = _this$props5.dedupe,
+          beforeFetch = _this$props5.beforeFetch;
+
+
+      _this.cancelExistingRequest('New fetch initiated');
+
+      var requestKey = _this.getRequestKey(options);
+      var requestOptions = Object.assign({}, _this.props, options);
+
+      var url = requestOptions.url,
+          body = requestOptions.body,
+          credentials = requestOptions.credentials,
+          headers = requestOptions.headers,
+          method = requestOptions.method,
+          responseType = requestOptions.responseType,
+          mode = requestOptions.mode,
+          cache = requestOptions.cache,
+          redirect = requestOptions.redirect,
+          referrer = requestOptions.referrer,
+          referrerPolicy = requestOptions.referrerPolicy,
+          integrity = requestOptions.integrity,
+          keepalive = requestOptions.keepalive,
+          signal = requestOptions.signal;
+
+
+      var uppercaseMethod = method.toUpperCase();
+      var shouldCacheResponse = _this.shouldCacheResponse();
+
+      var init = {
+        body: body,
+        credentials: credentials,
+        headers: headers,
+        method: uppercaseMethod,
+        mode: mode,
+        cache: cache,
+        redirect: redirect,
+        referrer: referrer,
+        referrerPolicy: referrerPolicy,
+        integrity: integrity,
+        keepalive: keepalive,
+        signal: signal
+      };
+
+      var responseReceivedInfo = {
+        url: url,
+        init: init,
+        requestKey: requestKey,
+        responseType: responseType
+      };
+
+      // This is necessary because `options` may have overridden the props.
+      // If the request config changes, we need to be able to accurately
+      // cancel the in-flight request.
+      _this.responseReceivedInfo = responseReceivedInfo;
+
+      _this.hasHandledNetworkResponse = false;
+
+      var fetchPolicy = _this.getFetchPolicy();
+
+      var cachedResponse = void 0;
+      if (fetchPolicy !== 'network-only' && !ignoreCache) {
+        cachedResponse = responseCache[requestKey];
+
+        if (cachedResponse) {
+          _this.onResponseReceived(_extends({}, responseReceivedInfo, {
+            response: cachedResponse,
+            hittingNetwork: false,
+            stillFetching: fetchPolicy === 'cache-and-network'
+          }));
+
+          if (fetchPolicy === 'cache-first' || fetchPolicy === 'cache-only') {
+            return Promise.resolve(cachedResponse);
+          }
+        } else if (fetchPolicy === 'cache-only') {
+          var cacheError = new Error('Response for "' + requestName + '" not found in cache.');
+          _this.onResponseReceived(_extends({}, responseReceivedInfo, {
+            error: cacheError,
+            hittingNetwork: false
+          }));
+          return Promise.resolve(cacheError);
+        }
+      }
+
+      _this.setState({
+        requestKey: requestKey,
+        url: url,
+        error: null,
+        failed: false,
+        fetching: true
+      });
+      var hittingNetwork = !Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["d" /* isRequestInFlight */])(requestKey) || !dedupe;
+
+      if (hittingNetwork) {
+        beforeFetch({
+          url: url,
+          init: init,
+          requestKey: requestKey
+        });
+      }
+      return Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["b" /* fetchDedupe */])(url, init, { requestKey: requestKey, responseType: responseType, dedupe: dedupe }).then(function (res) {
+        if (shouldCacheResponse) {
+          responseCache[requestKey] = res;
+        }
+
+        if (!_this.hasHandledNetworkResponse) {
+          _this.onResponseReceived(_extends({}, responseReceivedInfo, {
+            response: res,
+            hittingNetwork: hittingNetwork
+          }));
+        }
+
+        return res;
+      }, function (error) {
+        if (!_this.hasHandledNetworkResponse) {
+          _this.onResponseReceived(_extends({}, responseReceivedInfo, {
+            error: error,
+            cachedResponse: cachedResponse,
+            hittingNetwork: hittingNetwork
+          }));
+        }
+
+        return error;
+      });
+    };
+
+    _this.onResponseReceived = function (info) {
+      var _info$error = info.error,
+          error = _info$error === undefined ? null : _info$error,
+          _info$response = info.response,
+          response = _info$response === undefined ? null : _info$response,
+          hittingNetwork = info.hittingNetwork,
+          url = info.url,
+          init = info.init,
+          requestKey = info.requestKey,
+          cachedResponse = info.cachedResponse,
+          _info$stillFetching = info.stillFetching,
+          stillFetching = _info$stillFetching === undefined ? false : _info$stillFetching;
+
+
+      _this.responseReceivedInfo = null;
+
+      if (!stillFetching) {
+        _this.hasHandledNetworkResponse = true;
+      }
+
+      var data = void 0;
+      // If our response succeeded, then we use that data.
+      if (response && response.data) {
+        data = response.data;
+      } else if (cachedResponse && cachedResponse.data) {
+        // This happens when the request failed, but we have cache-and-network
+        // specified. Although we pass along the failed response, we continue to
+        // pass in the cached data.
+        data = cachedResponse.data;
+      }
+
+      data = data ? _this.props.transformData(data) : null;
+
+      // If we already have some data in state on error, then we continue to
+      // pass that data down. This prevents the data from being wiped when a
+      // request fails, which is generally not what people want.
+      // For more, see: GitHub Issue #154
+      if (error && _this.state.data) {
+        data = _this.state.data;
+      }
+
+      if (hittingNetwork) {
+        _this.props.afterFetch({
+          url: url,
+          init: init,
+          requestKey: requestKey,
+          error: error,
+          failed: Boolean(error || response && !response.ok),
+          response: response,
+          data: data,
+          didUnmount: Boolean(_this.willUnmount)
+        });
+      }
+
+      if (_this.willUnmount) {
+        return;
+      }
+
+      _this.setState({
+        url: url,
+        data: data,
+        error: error,
+        response: response,
+        fetching: stillFetching,
+        requestKey: requestKey
+      }, function () {
+        return _this.props.onResponse(error, response);
+      });
+    };
+
+    _this.state = {
+      requestKey: props.requestKey || Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["c" /* getRequestKey */])(_extends({}, props, {
+        method: props.method.toUpperCase()
+      })),
+      requestName: props.requestName,
+      fetching: false,
+      response: null,
+      data: null,
+      error: null,
+      url: props.url
+    };
+    return _this;
+  }
+
+  // We default to being lazy for "write" requests,
+  // such as POST, PATCH, DELETE, and so on.
+
+
+  _createClass(Fetch, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      if (!this.isLazy()) {
+        this.fetchData();
+      }
+    }
+
+    // Because we use `componentDidUpdate` to determine if we should fetch
+    // again, there will be at least one render when you receive your new
+    // fetch options, such as a new URL, but the fetch has not begun yet.
+
+  }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate(prevProps) {
+      var currentRequestKey = this.props.requestKey || Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["c" /* getRequestKey */])(_extends({}, this.props, {
+        method: this.props.method.toUpperCase()
+      }));
+      var prevRequestKey = prevProps.requestKey || Object(__WEBPACK_IMPORTED_MODULE_2_fetch_dedupe__["c" /* getRequestKey */])(_extends({}, prevProps, {
+        method: prevProps.method.toUpperCase()
+      }));
+
+      if (currentRequestKey !== prevRequestKey && !this.isLazy()) {
+        this.fetchData({
+          requestKey: currentRequestKey
+        });
+      }
+    }
+  }, {
+    key: 'componentWillUnmount',
+    value: function componentWillUnmount() {
+      this.willUnmount = true;
+      this.cancelExistingRequest('Component unmounted');
+    }
+
+    // When a request is already in flight, and a new one is
+    // configured, then we need to "cancel" the previous one.
+
+
+    // When a subsequent request is made, it is important that the correct
+    // request key is used. This method computes the right key based on the
+    // options and props.
+
+  }]);
+
+  return Fetch;
+}(__WEBPACK_IMPORTED_MODULE_0_react___default.a.Component);
+
+var globalObj = typeof self !== 'undefined' ? self : this;
+var AbortSignalCtr = globalObj.AbortSignal || function () {};
+
+Fetch.propTypes = {
+  children: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.func,
+  requestName: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string,
+  fetchPolicy: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['cache-first', 'cache-and-network', 'network-only', 'cache-only']),
+  onResponse: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.func,
+  beforeFetch: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.func,
+  afterFetch: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.func,
+  responseType: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOfType([__WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.func, __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['json', 'text', 'blob', 'arrayBuffer', 'formData'])]),
+  transformData: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.func,
+  lazy: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.bool,
+  dedupe: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.bool,
+  requestKey: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string,
+
+  url: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string.isRequired,
+  body: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.any,
+  credentials: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['omit', 'same-origin', 'include']),
+  headers: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.object,
+  method: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']),
+  mode: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['same-origin', 'cors', 'no-cors', 'navigate', 'websocket']),
+  cache: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['default', 'no-store', 'reload', 'no-cache', 'force-cache', 'only-if-cached']),
+  redirect: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['manual', 'follow', 'error']),
+  referrer: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string,
+  referrerPolicy: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.oneOf(['no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin', 'unsafe-url', '']),
+  integrity: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.string,
+  keepalive: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.bool,
+  signal: __WEBPACK_IMPORTED_MODULE_1_prop_types___default.a.instanceOf(AbortSignalCtr)
+};
+
+Fetch.defaultProps = {
+  requestName: 'anonymousRequest',
+  onResponse: function onResponse() {},
+  beforeFetch: function beforeFetch() {},
+  afterFetch: function afterFetch() {},
+  transformData: function transformData(data) {
+    return data;
+  },
+  dedupe: true,
+
+  method: 'get',
+  referrerPolicy: '',
+  integrity: '',
+  referrer: 'about:client'
+};
+
+/***/ }),
+
+/***/ "./node_modules/react-request/es/index.js":
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__fetch__ = __webpack_require__("./node_modules/react-request/es/fetch.js");
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_fetch_dedupe__ = __webpack_require__("./node_modules/fetch-dedupe/es/index.js");
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "Fetch", function() { return __WEBPACK_IMPORTED_MODULE_0__fetch__["a"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "fetchDedupe", function() { return __WEBPACK_IMPORTED_MODULE_1_fetch_dedupe__["b"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "getRequestKey", function() { return __WEBPACK_IMPORTED_MODULE_1_fetch_dedupe__["c"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "isRequestInFlight", function() { return __WEBPACK_IMPORTED_MODULE_1_fetch_dedupe__["d"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "clearRequestCache", function() { return __WEBPACK_IMPORTED_MODULE_1_fetch_dedupe__["a"]; });
+/* harmony reexport (binding) */ __webpack_require__.d(__webpack_exports__, "clearResponseCache", function() { return __WEBPACK_IMPORTED_MODULE_0__fetch__["b"]; });
+
+
+
+
+
+/***/ }),
+
 /***/ "./node_modules/react-router-dom/es/BrowserRouter.js":
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
@@ -67129,77 +67818,6 @@ module.exports = function(module) {
 
 /***/ }),
 
-/***/ "./src/Components/About/About.js":
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _react = __webpack_require__("./node_modules/react/index.js");
-
-var _react2 = _interopRequireDefault(_react);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var About = function (_React$Component) {
-    _inherits(About, _React$Component);
-
-    function About() {
-        _classCallCheck(this, About);
-
-        return _possibleConstructorReturn(this, (About.__proto__ || Object.getPrototypeOf(About)).apply(this, arguments));
-    }
-
-    _createClass(About, [{
-        key: 'render',
-        value: function render() {
-            return _react2.default.createElement(
-                'div',
-                null,
-                _react2.default.createElement(
-                    'h1',
-                    null,
-                    'About'
-                )
-            );
-        }
-    }]);
-
-    return About;
-}(_react2.default.Component);
-
-;
-
-var _default = About;
-exports.default = _default;
-;
-
-var _temp = function () {
-    if (typeof __REACT_HOT_LOADER__ === 'undefined') {
-        return;
-    }
-
-    __REACT_HOT_LOADER__.register(About, 'About', '/home/distil/Documents/events/HackLyon2018/src/Components/About/About.js');
-
-    __REACT_HOT_LOADER__.register(_default, 'default', '/home/distil/Documents/events/HackLyon2018/src/Components/About/About.js');
-}();
-
-;
-
-/***/ }),
-
 /***/ "./src/Components/Home/Home.css":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -67637,6 +68255,8 @@ var _Button = __webpack_require__("./node_modules/material-ui/Button/index.js");
 
 var _Button2 = _interopRequireDefault(_Button);
 
+var _reactRequest = __webpack_require__("./node_modules/react-request/es/index.js");
+
 var _step = __webpack_require__("./src/Components/QCM/Steps/step1.js");
 
 var _step2 = _interopRequireDefault(_step);
@@ -67729,13 +68349,56 @@ var QCM = function (_React$Component) {
         key: 'nextButton',
         value: function nextButton() {
             if (this.state.activeStep < 4) this.handleNext();else {
-                // send data
+                /*<Fetch
+                    url="http://127.0.0.1/profile" 
+                    method="POST"
+                    body={JSON.stringify(this.props.data)} />*/
+
+            }
+        }
+    }, {
+        key: 'validay',
+        value: function validay() {
+            var _this2 = this;
+
+            if (this.state.activeStep >= 4) {
+                return _react2.default.createElement(
+                    _reactRequest.Fetch,
+                    {
+                        url: 'http://127.0.0.1/profile',
+                        lazy: true,
+                        headers: {
+                            "content-type": "application/json",
+                            "mode": 'no-cors'
+                        },
+                        method: 'POST',
+                        body: JSON.stringify(this.props.data) },
+                    function (_ref) {
+                        var doFetch = _ref.doFetch;
+
+                        return _react2.default.createElement(
+                            _Button2.default,
+                            { variant: 'raised', color: 'primary', onClick: function onClick() {
+                                    doFetch();
+                                } },
+                            _this2.state.activeStep >= 4 ? 'Valider' : 'Suivant'
+                        );
+                    }
+                );
+            } else {
+                return _react2.default.createElement(
+                    _Button2.default,
+                    { variant: 'raised', color: 'primary', onClick: function onClick() {
+                            _this2.nextButton();
+                        } },
+                    this.state.activeStep >= 4 ? 'Valider' : 'Suivant'
+                );
             }
         }
     }, {
         key: 'render',
         value: function render() {
-            var _this2 = this;
+            var _this3 = this;
 
             var steps = getSteps();
             var activeStep = this.state.activeStep;
@@ -67772,17 +68435,11 @@ var QCM = function (_React$Component) {
                         {
                             disabled: activeStep === 0,
                             onClick: function onClick() {
-                                _this2.handleBack();
+                                _this3.handleBack();
                             } },
                         'Retour'
                     ),
-                    _react2.default.createElement(
-                        _Button2.default,
-                        { variant: 'raised', color: 'primary', onClick: function onClick() {
-                                _this2.nextButton();
-                            } },
-                        activeStep >= 4 ? 'Valider' : 'Suivant'
-                    )
+                    this.validay()
                 )
             );
         }
@@ -67807,6 +68464,16 @@ function stateToProps(state) {
 var _default = (0, _reactRedux.connect)(stateToProps)(QCM);
 
 exports.default = _default;
+
+/*
+JSON.stringify({
+                                nom : "aa",
+                                espece : "aa",
+                                sexe : "aa",
+                                description : "aa"
+                            })
+*/
+
 ;
 
 var _temp = function () {
@@ -68876,10 +69543,6 @@ var _Home = __webpack_require__("./src/Components/Home/Home.js");
 
 var _Home2 = _interopRequireDefault(_Home);
 
-var _About = __webpack_require__("./src/Components/About/About.js");
-
-var _About2 = _interopRequireDefault(_About);
-
 var _QCM = __webpack_require__("./src/Components/QCM/QCM.js");
 
 var _QCM2 = _interopRequireDefault(_QCM);
@@ -68914,7 +69577,6 @@ var RouteSys = function (_React$Component) {
 						'div',
 						null,
 						_react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _Home2.default }),
-						_react2.default.createElement(_reactRouterDom.Route, { path: '/about', component: _About2.default }),
 						_react2.default.createElement(_reactRouterDom.Route, { path: '/qcm', component: _QCM2.default })
 					)
 				)
