@@ -29,6 +29,9 @@ class User(models.Model):
 	firstname = models.CharField(max_length=30)
 	age = models.IntegerField()
 	email = models.EmailField()
-	sexe = models.CharField(max_length=1, choices=SEXE_CHOICES)
+	sexe = models.CharField(max_length=3, choices=SEXE_CHOICES)
 	prefer_transport = models.CharField(max_length=2, choices=MOVE_CHOICES)
 	subscriptions = models.ManyToManyField("Subscriptions")
+
+	def __str__(self):
+		return self.firstname + " " + self.name
