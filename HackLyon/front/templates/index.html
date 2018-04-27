@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
+        {% load static %}
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta http-equiv="X-UA-Compatible" content="ie=edge">
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
-        <link rel="stylesheet" href="style.css" />
+        <link rel="stylesheet" href="{% static "style.css" %}"/>
         <script src="https://use.fontawesome.com/778fe19c43.js"></script>
         <title>React Webpack</title>
     </head>
@@ -15,5 +16,5 @@
     </body>
     <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
-    <script src="bundle.js"></script>
+    <script src="{% static "bundle.js" %}"></script>
 </html>

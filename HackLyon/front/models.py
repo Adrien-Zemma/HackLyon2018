@@ -20,10 +20,9 @@ class User(models.Model):
     		('Mme', 'Madame'),
 	)
 	MOVE_CHOICES = (
-		('B', 'Bus'),
-		('T', 'Tram'),
-		('Vo', 'Voiture'),
-		('Ve', 'Vélo'),
+		('T', 'transit'),
+		('D', 'driving'),
+		('B', 'bicycling'),
 	)
 	name = models.CharField(max_length=30)
 	firstname = models.CharField(max_length=30)
