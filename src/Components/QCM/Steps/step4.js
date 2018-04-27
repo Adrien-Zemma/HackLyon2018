@@ -61,6 +61,13 @@ class step2 extends React.Component
             <br />
             <br />
             <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
             <div className="w3-row w3-padding">
                 <div className="w3-quarter w3-padding">
                     <div class="card img-width height-card">
@@ -103,6 +110,13 @@ class step2 extends React.Component
                     </div>
                 </div>
             </div>
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
             <br />
             <br />
             <br />
