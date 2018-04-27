@@ -2,6 +2,7 @@ import React from 'react';
 import { connect }                          from 'react-redux';
 import Stepper, { Step, StepLabel } from 'material-ui/Stepper'
 import Button from 'material-ui/Button';
+import { Fetch } from 'react-request';
 
 import Step1 from './Steps/step1';
 import Step2 from './Steps/step2';
@@ -72,7 +73,43 @@ class QCM extends React.Component
             this.handleNext()
         else
         {
-            // send data
+            /*<Fetch
+                url="http://127.0.0.1/profile" 
+                method="POST"
+                body={JSON.stringify(this.props.data)} />*/
+            
+               
+
+        }
+    }
+
+    validay()
+    {
+        if (this.state.activeStep >= 4)
+        {
+            return <Fetch
+                        url="http://127.0.0.1/profile"
+                        lazy={true}
+                        headers={
+                            {
+                                "content-type" : "application/json",
+                                "mode" : 'no-cors'
+                            }
+                        }
+                        method="POST"
+                        body={JSON.stringify(this.props.data)}>
+                        {({ doFetch }) => {
+                            return <Button variant="raised" color="primary" onClick={()=> {doFetch()}}>
+                            {this.state.activeStep >= 4 ? 'Valider' : 'Suivant'}
+                        </Button>
+                        }}
+                        </Fetch>
+        }
+        else
+        {
+            return <Button variant="raised" color="primary" onClick={()=> {this.nextButton()}}>
+            {this.state.activeStep >= 4 ? 'Valider' : 'Suivant'}
+        </Button>
         }
     }
 
@@ -101,9 +138,10 @@ class QCM extends React.Component
 					onClick={()=> {this.handleBack()}}>
 						Retour
 					</Button>
-					<Button variant="raised" color="primary" onClick={()=> {this.nextButton()}}>
-						{activeStep >= 4 ? 'Valider' : 'Suivant'}
-					</Button>
+					{
+                        this.validay()
+                    }
+                    
 				</div>
             </div>
         )
@@ -118,3 +156,13 @@ function stateToProps(state)
 }
 
 export default connect(stateToProps)(QCM);
+
+
+/*
+JSON.stringify({
+                                nom : "aa",
+                                espece : "aa",
+                                sexe : "aa",
+                                description : "aa"
+                            })
+*/
