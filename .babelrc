@@ -1,0 +1,19 @@
+{
+    "plugins" : 
+    [
+        "transform-object-rest-spread",
+        "react-hot-loader/babel",
+        [
+            "css-modules-transform", {
+                "generateScopedName": "[local]",
+                "extractCss": "./dist/combined.css"
+            }
+        ]
+    ],
+    "presets": 
+    [
+        "env",
+        "es2017",
+        "react"
+    ]
+}
