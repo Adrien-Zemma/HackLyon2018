@@ -1,0 +1,23 @@
+$primary : #e74c3c;
+$black : #2c3e50;
+
+
+.back-primary {
+    background-color : $primary;
+}
+
+.back-secondary {
+    background-color : $black;
+}
+
+.color-primary {
+    color : $primary;
+}
+
+.color-secondary {
+    color : $black;
+}
+
+body {
+    background-color: $primary;
+}
