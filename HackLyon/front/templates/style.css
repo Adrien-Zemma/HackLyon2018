@@ -1,0 +1,11 @@
+body {
+    background-color: #e74c3c;
+}
+
+input {
+    margin : 0px 16px 0px 0px !important;
+}
+
+img {
+    cursor: pointer;
+}
