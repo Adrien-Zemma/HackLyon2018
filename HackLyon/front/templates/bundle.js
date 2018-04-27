@@ -61,7 +61,7 @@
 /******/ 	
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "8c6556c6e86409e86efc"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "8a45ad628fdf407b47f8"; // eslint-disable-line no-unused-vars
 /******/ 	var hotRequestTimeout = 10000;
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentChildModule; // eslint-disable-line no-unused-vars
@@ -74178,13 +74178,8 @@ var QCM = function (_React$Component) {
     }, {
         key: 'nextButton',
         value: function nextButton() {
-            if (this.state.activeStep < 4) this.handleNext();else {
-                /*<Fetch
-                    url="http://127.0.0.1/profile" 
-                    method="POST"
-                    body={JSON.stringify(this.props.data)} />*/
-
-            }
+            this.handleNext();
+            if (this.state.activeStep >= 4) this.requestServer();
         }
     }, {
         key: 'getCookie',
@@ -74207,39 +74202,13 @@ var QCM = function (_React$Component) {
         value: function validay() {
             var _this2 = this;
 
-            var csrftoken = this.getCookie('csrftoken');
-            var token = _react2.default.createElement(_djangoReactCsrftoken2.default, null);
-            console.log("LE SANG : ");
-            console.log(new token.type());
-            console.log("TOKEN :");
-            console.log(csrftoken);
-            (0, _axios2.default)({
-                method: 'post',
-                url: '/profile/',
-                data: {
-                    name: "Jean",
-                    surname: "jean",
-                    age: 8,
-                    mail: "mymail"
-                }
-            });
-            if (this.state.activeStep >= 4) {
-                _react2.default.createElement(
-                    _Button2.default,
-                    { variant: 'raised', color: 'primary', onClick: function onClick() {
-                            _this2.requestServer();
-                        } },
-                    this.state.activeStep >= 4 ? 'Valider' : 'Suivant'
-                );
-            } else {
-                return _react2.default.createElement(
-                    _Button2.default,
-                    { variant: 'raised', color: 'primary', onClick: function onClick() {
-                            _this2.nextButton();
-                        } },
-                    this.state.activeStep >= 4 ? 'Valider' : 'Suivant'
-                );
-            }
+            return _react2.default.createElement(
+                _Button2.default,
+                { variant: 'raised', color: 'primary', onClick: function onClick() {
+                        _this2.nextButton();
+                    } },
+                this.state.activeStep >= 4 ? 'Valider' : 'Suivant'
+            );
         }
     }, {
         key: 'requestServer',
@@ -74247,12 +74216,7 @@ var QCM = function (_React$Component) {
             (0, _axios2.default)({
                 method: 'post',
                 url: '/profile/',
-                data: {
-                    name: "Jean",
-                    surname: "jean",
-                    age: 8,
-                    mail: "mymail"
-                }
+                data: this.props.data
             });
         }
     }, {
