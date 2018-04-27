@@ -1,0 +1,12 @@
+{
+    "en" :
+    {
+        "home" : "Home",
+        "about" : "About"
+    },
+    "fr" : 
+    {
+        "home" : "Menu",
+        "about" : "À propos"
+    }
+}
