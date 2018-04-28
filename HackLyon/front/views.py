@@ -15,7 +15,7 @@ class Profile(View):
 	
 	@csrf_exempt
 	def post(self, request, *args, **kwargs):
-		print(request)
+		print(request.POST)
 		new = User()
 		new.name = request.POST.get("name")
 		new.firstname = request.POST.get("surname")
