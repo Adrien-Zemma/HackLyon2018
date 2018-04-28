@@ -8,16 +8,47 @@
         <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
         <script src="https://use.fontawesome.com/778fe19c43.js"></script>
-        <title>React Webpack</title>
-    </head>
-    <body>
-        <form method="POST" class="post-form">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="save btn btn-default">Save</button>
-        </form>
-    </body>
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+	<title>CityOS</title>
+	{% include 'material/includes/material_css.html' %}
+        <script src="{% static 'material/js/jquery.js' %}"></script>
+        {% include 'material/includes/material_js.html' %}
+	{% load material_form %}
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+	<style>
+	body,h1 {font-family: "Raleway", sans-serif}
+	body, html {height: 100%}
+	.bgimg {
+	    background-image: url('{% static "background.jpg"%}');
+	    min-height: 100%;
+	    background-position: center;
+	    background-size: cover;
+	}
+	</style>
+	</head>
+	<body>
+	
+	<div class="bgimg w3-display-container w3-animate-opacity w3-text-white">
+	  <div class="w3-display-topleft w3-padding-large w3-xlarge">
+	    Logo
+	  </div>
+	  <div class="w3-display-middle">
+	    <div class="w3-jumbo w3-animate-top" style="background-color:rgba(59, 52, 52, 0.829); padding: 16px; width:175%;">
+        {% if is_log == True %}
+            <form method="POST" class="post-form">
+                {% csrf_token %}
+                {% form form=form %}{% endform %}
+                <button type="submit" name="_submit" class="btn">Save</button>
+            </form>
+        {% endif %}
+        <input type="submit" class="save btn btn-default" value="Menu principal" onclick="window.location='/';" />
+    </div>
+    <hr class="w3-border-grey" style="margin:auto;width:40%">
+  </div>
+</div>
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>
+</body>
 </html>
-

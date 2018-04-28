@@ -5,12 +5,16 @@ import json
 def sortData(data):
 	path = []
 	travel = {}
-	for elem in data["routes"][0]["legs"][0]["steps"]:
-		path.append(elem["html_instructions"])
-	path = [x + "</br>" for x in path]
-	travel["path"] = path
-	travel["duration"] = data["routes"][0]["legs"][0]["duration"]["text"]
-	travel["distance"] = data["routes"][0]["legs"][0]["distance"]["text"]
+	try:
+		for elem in data["routes"][0]["legs"][0]["steps"]:
+			path.append(elem["html_instructions"])
+		path = [x + "</br>" for x in path]
+		travel["path"] = path
+		travel["duration"] = data["routes"][0]["legs"][0]["duration"]["text"]
+		travel["distance"] = data["routes"][0]["legs"][0]["distance"]["text"]
+	except:
+		print("request failed")
+		return None
 
 	return travel
 
@@ -46,18 +50,18 @@ def buildWaypoint(waypoints):
 				tab.append(elem)
 	return tab
 
-def getPath(origin, destination, mode, *waypoints):
+def getPath(user):
 	param = {}
-	param["mode"] = "mode=" + mode
-	param["language"] = "&language=" + "fr"
-	param["origin"] = "&origin=" + origin.replace(" ", "+")
-	param["destination"] = "&destination=" + destination.replace(" ", "+")
-	param["destination"] = "&destination=" + destination.replace(" ", "+")
-	param["waypoints"] = buildWaypoint(waypoints)
-	param["avoid"]
-	param["transit_mode"]
-	param["transit_routing_preference"] 
+	param["language"] = "language=" + "fr"
+	param["mode"] = "&mode=" + user["input"]["mode"]
+	#param["departure_time"] = "&departure_time=now"
+	param["origin"] = "&origin=" + user["input"]["src"].replace(" ", "+")
+	param["destination"] = "&destination=" + user["input"]["dest"].replace(" ", "+")
 	
 	url = addingParamToUrl(param)
+	print (url)
 	data = request(url)
-	return sortData(data)
+	print("~"*30)
+	print(data)
+	print("~"*30)
+	return (sortData(data))

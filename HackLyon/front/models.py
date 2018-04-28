@@ -51,4 +51,4 @@ class ProfileForm(forms.ModelForm):
 class InputForm(forms.Form):
 	src = forms.CharField(max_length=500, label='Adresse de départ')
 	dest = forms.CharField(max_length=500, label='Adresse d\'arriver')
-	mode = forms.ModelMultipleChoiceField(queryset=Subscriptions.objects.all())
+	#mode = forms.ModelMultipleChoiceField(queryset=Subscriptions.objects.all())
