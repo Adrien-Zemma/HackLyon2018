@@ -1,6 +1,7 @@
 from front.models import User, Subscriptions
 from rest_framework import viewsets
 from .serializers import UserSerializer, SubscriptionsSerializer
+from django.http import HttpResponse, HttpResponseServerError
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -16,3 +17,7 @@ class SubscriptionsViewSet(viewsets.ModelViewSet):
     """
     queryset = Subscriptions.objects.all()
     serializer_class = SubscriptionsSerializer
+
+def user(request, obj):
+    print(request)
+    return HttpResponse("hello")
